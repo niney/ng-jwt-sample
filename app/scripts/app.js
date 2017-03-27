@@ -16,22 +16,17 @@ angular
         'ngSanitize',
         'ngTouch',
         'ui.router',
+        'ngCacheBuster',
+        'ngStorage',
+        'config',
+        'pascalprecht.translate',
+        'tmh.dynamicLocale'
     ])
+    .run(function (stateHandler, translationHandler) {
+        stateHandler.initialize();
+        translationHandler.initialize();
+    })
     .config(function ($stateProvider, $urlRouterProvider) {
-        /*$routeProvider
-            .when('/', {
-                templateUrl: 'views/main.html',
-                controller: 'MainCtrl',
-                controllerAs: 'main'
-            })
-            .when('/about', {
-                templateUrl: 'views/about.html',
-                controller: 'AboutCtrl',
-                controllerAs: 'about'
-            })
-            .otherwise({
-                redirectTo: '/'
-            });*/
 
         $urlRouterProvider.otherwise('/');
 
@@ -39,7 +34,22 @@ angular
             .state('master', {
                 abstract: true,
                 templateUrl: 'views/t/master.html',
-                controller: 'MainCtrl as vm'
+                controller: 'MainCtrl as vm',
+                resolve: {
+                    authorize: ['Auth',
+                        function (Auth) {
+                            return Auth.authorize();
+                        }
+                    ],
+                    translatePartialLoader: ['$translate', '$translatePartialLoader', function ($translate, $translatePartialLoader) {
+                        $translatePartialLoader.addPart('common');
+                        return $translate.refresh();
+                    }]
+                },
+                data: {
+                    authorities: [],
+                    pageTitle: 'global.title'
+                }
             })
             .state('master.home', {
                 url: '/',
@@ -47,8 +57,24 @@ angular
                 controller: 'HomeCtrl as vm'
             })
             .state('master.about', {
-                url: '/',
+                url: '/about',
                 templateUrl: 'views/about.html',
-                controller: 'AboutCtrl as vm'
+                controller: 'AboutCtrl as vm',
+                data: {
+                    authorities: ['ROLE_USER']
+                }
             })
+            .state('master.admin', {
+                url: '/admin',
+                templateUrl: 'views/admin.html',
+                data: {
+                    authorities: ['ROLE_ADMIN']
+                }
+            })
+            .state('accessdenied', {
+                url: '/accessdenied',
+                parent: 'master',
+                templateUrl: 'views/accessdenied.html'
+            })
+        ;
     });
